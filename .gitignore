@@ -7,6 +7,7 @@
 frontend/build/
 frontend/node_modules/
 frontend/.eslintcache
+frontend/package-lock.json
 
 # Backend runtime artifacts
 backend/node_modules/
@@ -15,6 +16,7 @@ backend/dist/
 backend/data/*.db
 backend/data/*.sqlite
 backend/data/*.sqlite3
+backend/package-lock.json
 
 # Common editor / OS noise
 .DS_Store

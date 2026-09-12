@@ -19,22 +19,22 @@ This project was implemented as a small full-stack demo: a React frontend for in
 
 ```mermaid
 flowchart LR
-    User[User] --> FE[React Frontend\nfrontend/src/App.tsx]
-    FE --> API[Express API\nbackend/src/server.ts\n/backend/src/routes.ts]
+    User["User"] --> FE["React Frontend<br/>frontend/src/App.tsx"]
+    FE --> API["Express API<br/>backend/src/server.ts<br/>backend/src/routes.ts"]
 
-    API --> Upload[/upload\naccepts multipart files]
-    API --> Analyze[/analyze\naccepts raw text]
+    API --> Upload["/upload<br/>accepts multipart files"]
+    API --> Analyze["/analyze<br/>accepts raw text"]
 
-    Upload --> Ingest[ingestService\nstores file metadata]
-    Ingest --> SQLite[(SQLite documents table)]
-    Ingest --> UploadDir[uploads/ directory]
+    Upload --> Ingest["ingestService<br/>stores file metadata"]
+    Ingest --> SQLite["SQLite documents table"]
+    Ingest --> UploadDir["uploads/ directory"]
 
-    Analyze --> Extract[regex extraction\nllmService.ts]
-    Extract --> Validate[Zod schema validation\nanalysisSchema.ts]
-    Validate --> Response[JSON response\nfields, missing_info, discrepancy]
+    Analyze --> Extract["regex extraction<br/>llmService.ts"]
+    Extract --> Validate["Zod schema validation<br/>analysisSchema.ts"]
+    Validate --> Response["JSON response<br/>fields, missing_info, discrepancy"]
     Response --> FE
 
-    FE --> UI[Results table + status + copy actions]
+    FE --> UI["Results table + status + copy actions"]
 ```
 
 ## What was actually built
