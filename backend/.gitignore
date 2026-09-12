@@ -3,3 +3,4 @@ uploads/*
 dist/
 data/*db
 .env
+.package-lock.json

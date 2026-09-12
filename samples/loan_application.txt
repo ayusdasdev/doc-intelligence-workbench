@@ -1,0 +1,7 @@
+Loan Application Form
+Applicant Name: Rohan Mehta
+Address: 12 MG Road, Pune
+Monthly Income: INR 85,000
+Loan Amount: INR 1,200,000
+PAN: ABCDE1234F
+Due Date: 2027-03-01

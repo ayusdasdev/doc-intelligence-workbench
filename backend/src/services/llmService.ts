@@ -10,7 +10,11 @@ const FIELD_PATTERNS = {
     /\b\d+\s+[A-Za-z0-9.\- ]+,\s*[A-Za-z .'-]+\b/g,
   ],
   income: [
-    /\b(?:annual\s+income|monthly\s+income|income)\s*[:=]\s*\$?\s*([0-9][0-9,]*(?:\.\d{2})?)/gi,
+    /\b(?:annual\s+income|monthly\s+income|income|salary)\s*[:=]\s*\$?\s*([0-9][0-9,]*(?:\.\d{2})?)/gi,
+    /\$\s*([0-9][0-9,]*(?:\.\d{2})?)/g,
+  ],
+  salary: [
+    /\b(?:salary|annual\s+salary|monthly\s+salary)\s*[:=]\s*\$?\s*([0-9][0-9,]*(?:\.\d{2})?)/gi,
     /\$\s*([0-9][0-9,]*(?:\.\d{2})?)/g,
   ],
   loan_amount: [
@@ -23,11 +27,16 @@ const FIELD_PATTERNS = {
   ],
 } as const;
 
+function getFirstValue(values: string[] | undefined): string {
+  return values && values.length > 0 ? values[0] : '';
+}
+
 export function extractFields(text: string): Record<string, string[]> {
   const values: Record<string, string[]> = {
     name: [],
     address: [],
     income: [],
+    salary: [],
     loan_amount: [],
     id_number: [],
   };
@@ -59,7 +68,7 @@ export function callMockLlm(text: string): AnalysisResult {
     .filter(([, values]) => values.length > 0)
     .map(([label, values]) => ({
       label,
-      value: values[0],
+      value: getFirstValue(values),
       evidence: values.join('; '),
     }));
 
@@ -67,8 +76,17 @@ export function callMockLlm(text: string): AnalysisResult {
     .filter(([, values]) => values.length === 0)
     .map(([label]) => label);
 
-  const discrepancy = extracted.income.length > 0 && extracted.loan_amount.length > 0 && Number(extracted.income[0].replace(/[^\d.]/g, '')) < Number(extracted.loan_amount[0].replace(/[^\d.]/g, ''))
-    ? ['Income is lower than requested loan amount.']
+  const incomeValueText = getFirstValue(extracted.income.length > 0 ? extracted.income : extracted.salary);
+  const loanValueText = getFirstValue(extracted.loan_amount);
+  const discrepancy = incomeValueText && loanValueText
+    ? (() => {
+        const incomeValue = Number(incomeValueText.replace(/[^\d.]/g, ''));
+        const loanValue = Number(loanValueText.replace(/[^\d.]/g, ''));
+
+        return !Number.isNaN(incomeValue) && !Number.isNaN(loanValue) && incomeValue < loanValue
+          ? ['Income is lower than requested loan amount.']
+          : [];
+      })()
     : [];
 
   return analysisSchema.parse({
@@ -84,15 +102,18 @@ export function runAnalysis(text: string): AnalysisResult {
   const missingInfo: string[] = [];
   const discrepancy: string[] = [];
 
-  for (const field of ['name', 'address', 'income', 'loan_amount', 'id_number'] as const) {
-    if (extracted[field].length === 0) {
+  for (const field of ['name', 'address', 'income', 'salary', 'loan_amount', 'id_number'] as const) {
+    if ((extracted[field] ?? []).length === 0) {
       missingInfo.push(field);
     }
   }
 
-  if (extracted.income.length > 0 && extracted.loan_amount.length > 0) {
-    const incomeValue = Number(extracted.income[0].replace(/[^\d.]/g, ''));
-    const loanValue = Number(extracted.loan_amount[0].replace(/[^\d.]/g, ''));
+  const incomeValueText = getFirstValue(extracted.income.length > 0 ? extracted.income : extracted.salary);
+  const loanValueText = getFirstValue(extracted.loan_amount);
+
+  if (incomeValueText && loanValueText) {
+    const incomeValue = Number(incomeValueText.replace(/[^\d.]/g, ''));
+    const loanValue = Number(loanValueText.replace(/[^\d.]/g, ''));
 
     if (!Number.isNaN(incomeValue) && !Number.isNaN(loanValue) && incomeValue < loanValue) {
       discrepancy.push('Income is lower than requested loan amount.');
@@ -103,7 +124,7 @@ export function runAnalysis(text: string): AnalysisResult {
     .filter(([, values]) => values.length > 0)
     .map(([label, values]) => ({
       label,
-      value: values[0],
+      value: getFirstValue(values),
       evidence: values.join('; '),
     }));
 

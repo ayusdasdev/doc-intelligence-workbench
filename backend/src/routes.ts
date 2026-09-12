@@ -2,7 +2,7 @@ import type { NextFunction, Request, Response } from 'express';
 import { Router } from 'express';
 
 import { upload } from './middleware/upload';
-import { ingestDocument } from './services/ingestService';
+import { clearSessionUploads, ingestDocument } from './services/ingestService';
 import { runAnalysis } from './services/llmService';
 
 const router: Router = Router();
@@ -11,6 +11,8 @@ router.post('/upload', upload.array('files', 10), async (req: Request, res: Resp
   try {
     const files = Array.isArray(req.files) ? req.files : [];
     const sessionId = typeof req.body?.sessionId === 'string' ? req.body.sessionId : 'default-session';
+    clearSessionUploads(sessionId);
+
     const succeeded: Array<{ name: string; id: number }> = [];
     const failed: Array<{ name: string; error: string }> = [];
 
@@ -41,22 +43,24 @@ router.post('/upload', upload.array('files', 10), async (req: Request, res: Resp
 
 router.post('/analyze', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const sessionId = typeof req.body?.sessionId === 'string' ? req.body.sessionId : '';
     const text = typeof req.body?.text === 'string' ? req.body.text : '';
 
-    if (!sessionId || !text) {
+    if (!text) {
       res.status(400).json({
-        succeeded: [],
-        failed: [{ sessionId, error: 'Missing sessionId or text' }],
+        error: 'Missing text',
       });
       return;
     }
 
-    const result = runAnalysis(text);
+    const extracted = runAnalysis(text);
+    const fields = Object.fromEntries(
+      extracted.findings.map((finding) => [finding.label, finding.value]),
+    );
 
     res.status(200).json({
-      succeeded: [{ sessionId, summary: result.summary }],
-      failed: [],
+      fields,
+      missing_info: extracted.missing_info,
+      discrepancy: extracted.discrepancy,
     });
   } catch (error) {
     next(error);

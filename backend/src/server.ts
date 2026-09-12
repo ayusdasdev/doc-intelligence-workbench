@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import cors from 'cors';
+import multer from 'multer';
 
 import router from './routes';
 import { initSchema } from './db/db';
@@ -19,10 +20,24 @@ app.get('/health', (_req: Request, res: Response) => {
 
 app.use('/api', router);
 
-app.use((err: Error & { statusCode?: number }, _req: Request, res: Response, _next: NextFunction) => {
-  const statusCode = err.statusCode ?? 500;
+app.use((err: Error & { statusCode?: number; status?: number }, _req: Request, res: Response, _next: NextFunction) => {
+  const statusCode =
+    typeof err?.statusCode === 'number'
+      ? err.statusCode
+      : typeof err?.status === 'number'
+        ? err.status
+        : 500;
+
+  const message = typeof err?.message === 'string' && err.message.trim().length > 0
+    ? err.message
+    : 'Internal Server Error';
+
+  const normalizedMessage = statusCode === 400 || /unsupported|only csv|only txt|file type/i.test(message)
+    ? 'Unsupported file type. Please upload only CSV or TXT files.'
+    : message;
+
   res.status(statusCode).json({
-    error: err.message || 'Internal Server Error',
+    error: normalizedMessage,
   });
 });
 

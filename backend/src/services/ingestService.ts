@@ -1,5 +1,20 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
 import type { ParsedDocument } from '../types';
 import { db } from '../db/db';
+
+export function clearSessionUploads(sessionId: string): void {
+  db.prepare('DELETE FROM documents WHERE session_id = ?').run(sessionId);
+
+  const uploadDir = process.env.UPLOAD_DIR ?? './uploads';
+  const resolvedUploadDir = path.resolve(uploadDir);
+
+  if (fs.existsSync(resolvedUploadDir)) {
+    fs.rmSync(resolvedUploadDir, { recursive: true, force: true });
+    fs.mkdirSync(resolvedUploadDir, { recursive: true });
+  }
+}
 
 export async function ingestDocument(file: {
   originalname: string;

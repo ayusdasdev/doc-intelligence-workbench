@@ -32,7 +32,9 @@ const fileFilter = (_req: Express.Request, file: Express.Multer.File, cb: FileFi
     return;
   }
 
-  cb(new Error('Only CSV and text files are allowed'));
+  const error = new Error('Only CSV and text files are allowed') as Error & { statusCode?: number };
+  error.statusCode = 400;
+  cb(error);
 };
 
 const storage: StorageEngine = multer.diskStorage({

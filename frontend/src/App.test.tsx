@@ -2,8 +2,9 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-test('renders learn react link', () => {
+test('renders the document intelligence app shell', () => {
   render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+
+  expect(screen.getByText(/document intelligence workbench/i)).toBeInTheDocument();
+  expect(screen.getByText(/upload documents/i)).toBeInTheDocument();
 });
